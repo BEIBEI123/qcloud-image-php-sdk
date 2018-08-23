@@ -1,10 +1,15 @@
-# tencentyun/image-php-sdk-v2.0
+# mrasong/qcloud-image-php-sdk
 腾讯云 [万象优图（Cloud Image）](https://www.qcloud.com/product/ci) SDK for PHP
 
-## 安装（直接下载源码集成）
-### 直接下载源码集成
-从github下载源码，并加载image-php-sdk-v2.0/index.php就可以了。
-调用请参考sample.php
+## 安装
+### composer
+
+
+```
+composer require mrasong/qcloud-image-php-sdk
+```
+
+
 
 ### 1. 在腾讯云申请业务的授权
 授权包括：
