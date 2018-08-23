@@ -12,9 +12,7 @@
         }
     ],
     "require": {
-        "php": ">=5.5",
-    },
-    "require-dev": {
+        "php": ">=5.5"
     },
     "autoload": {
         "psr-4": {
