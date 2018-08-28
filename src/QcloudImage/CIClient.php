@@ -220,14 +220,14 @@ class CIClient {
     }
     
     /**
-     * 行驶证识别
-     * @param  array(associative) $picture   识别的图片
-     *                 * @param  array(associative) $pictures   Person的人脸图片
-     *                  urls    array: 指定图片的url数组
-     *                  files   array: 指定图片的路径数组
-     *                  buffers array: 指定图片的内容
-     *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
-     * @param $cardType int 0为身份证有照片的一面，1为身份证有国徽的一面                
+     * 行驶证/驾驶证 识别
+     * @param  array(associative) $picture   创建的行驶证/驾驶证照片
+     *                  url    string: 指定图片的url
+     *                  file   string: 指定图片的路径
+     *                  buffer string: 指定图片的内容
+     *                  以上三种指定其一即可，如果指定多个，则优先使用url，其次 file，再次 buffer。
+
+     * @param $type int 0 表示行驶证，1 表示驾驶证，2 表示行驶证副页。                
      * @return array    http请求响应
      */
     public function drivinglicenceDetect($picture, $type=0) {
@@ -244,48 +244,80 @@ class CIClient {
         $headers = $this->baseHeaders();
         $files = $this->baseParams();
         $files['type'] = $type;
+
         if (isset($picture['url'])) {
             $headers[] = 'Content-Type:application/json';
             $files['url'] = $picture['url'];
-             
             $data = json_encode($files);
-        } else if (isset($picture['files'])){
-            $index = 0;
-             
-            foreach ($picture['files'] as $file) {
-                if(PATH_SEPARATOR==';'){    // WIN OS
-                    $path = iconv("UTF-8","gb2312//IGNORE",$file);
-                } else {
-                    $path = $file;
-                }
-                 
-                $path = realpath($path);
-                if (!file_exists($path)) {
-                    return Error::json(Error::$FilePath, 'file '.$file.' not exist');
-                }
-                 
-                if (function_exists('curl_file_create')) {
-                    $files["image[$index]"] = curl_file_create($path);
-                } else {
-                    $files["image[$index]"] = '@'.($path);
-                }
-                $index++;
-            }
-             
-            $data = $files;
-        } else if (isset($picture['buffers'])){
-            $index = 0;
-             
-            foreach ($picture['buffers'] as $buffer) { 
-                $files["image[$index]"] = $buffer;
-                
-                $index++;
-            }
-             
-            $data = $files;
         } else {
-            return Error::json(Error::$Param, 'param picture is illegal');
+            if (isset($picture['file'])) {
+                if(PATH_SEPARATOR==';'){    // WIN OS
+                    $path = iconv("UTF-8","gb2312//IGNORE",$picture['file']);
+                } else {
+                    $path = $picture['file'];
+                }
+                
+                $filePath = realpath($path);
+
+                if (! file_exists($filePath)) {
+                    return Error::json(Error::$FilePath, 'file '.$picture['file'].' not exist');
+                }
+
+                if (function_exists('curl_file_create')) {
+                    $files['image'] = curl_file_create($filePath);
+                } else {
+                    $files['image'] = '@' . $filePath;
+                }
+            } else if (isset($picture['buffer'])) {
+                $files['image'] = $picture['buffer'];
+            } else {
+                return Error::json(Error::$Param, 'param picture is illegal');
+            }
+            $data = $files;
         }
+
+        // if (isset($picture['url'])) {
+        //     $headers[] = 'Content-Type:application/json';
+        //     $files['url'] = $picture['url'];
+             
+        //     $data = json_encode($files);
+        // } else if (isset($picture['files'])){
+        //     $index = 0;
+             
+        //     foreach ($picture['files'] as $file) {
+        //         if(PATH_SEPARATOR==';'){    // WIN OS
+        //             $path = iconv("UTF-8","gb2312//IGNORE",$file);
+        //         } else {
+        //             $path = $file;
+        //         }
+                 
+        //         $path = realpath($path);
+        //         if (!file_exists($path)) {
+        //             return Error::json(Error::$FilePath, 'file '.$file.' not exist');
+        //         }
+                 
+        //         if (function_exists('curl_file_create')) {
+        //             $files["image[$index]"] = curl_file_create($path);
+        //         } else {
+        //             $files["image[$index]"] = '@'.($path);
+        //         }
+        //         $index++;
+        //     }
+             
+        //     $data = $files;
+        // } else if (isset($picture['buffers'])){
+        //     $index = 0;
+             
+        //     foreach ($picture['buffers'] as $buffer) { 
+        //         $files["image[$index]"] = $buffer;
+                
+        //         $index++;
+        //     }
+             
+        //     $data = $files;
+        // } else {
+        //     return Error::json(Error::$Param, 'param picture is illegal');
+        // }
          
         return $this->doRequest(array(
             'url' => $reqUrl,

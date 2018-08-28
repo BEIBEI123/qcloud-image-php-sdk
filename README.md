@@ -89,6 +89,18 @@ composer require mrasong/qcloud-image-php-sdk
 																file_get_contents('F:\pic\name2.jpg'))), 0));
 ```
 
+##### 驾驶证/行驶证识别	
+```php
+
+	// 0 表示行驶证，1 表示驾驶证，2 表示行驶证副页。 
+	//单个或多个图片Url
+	var_dump ($client->drivinglicenceDetect(array('url'=>'YOUR URL A'), 0));
+	//单个或多个图片file,
+	var_dump ($client->drivinglicenceDetect(array('file'=>'F:\pic\r.jpg'), 1));
+	//单个或多个图片内容
+	var_dump ($client->drivinglicenceDetect(array('buffer'=>file_get_contents('F:\pic\name1.jpg')), 0));
+```
+
 #### 3.2 人脸识别
 人脸识别包括：人脸检测、五官定位、个体信息管理、人脸验证、人脸对比及人脸检索。
 
