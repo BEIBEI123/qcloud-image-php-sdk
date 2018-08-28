@@ -11,290 +11,367 @@ use QcloudImage\Conf;
 
 class CIClient {
 
-	public function __construct($appid, $secretId, $secretKey, $bucket){
-		$this->bucket = $bucket;
-		$this->auth = new Auth($appid, $secretId, $secretKey);
-		$this->http = new HttpClient();
-		$this->conf = new Conf();
-	}
-	public function useHttp() {
-		return $this->conf->useHttp();
-	}
-	public function useHttps() {
-		return $this->conf->useHttps();
-	}
-	public function setTimeout($timeout) {
-		return $this->conf->setTimeout($timeout);
-	}
-	
-	/**
-	 * 黄图识别
-	 * @param  array(associative) $picture   识别的图片           
-	 *                 * @param  array(associative) $pictures   Person的人脸图片
+    public function __construct($appid, $secretId, $secretKey, $bucket){
+        $this->bucket = $bucket;
+        $this->auth = new Auth($appid, $secretId, $secretKey);
+        $this->http = new HttpClient();
+        $this->conf = new Conf();
+    }
+    public function useHttp() {
+        return $this->conf->useHttp();
+    }
+    public function useHttps() {
+        return $this->conf->useHttps();
+    }
+    public function setTimeout($timeout) {
+        return $this->conf->setTimeout($timeout);
+    }
+    
+    /**
+     * 黄图识别
+     * @param  array(associative) $picture   识别的图片           
+     *                 * @param  array(associative) $pictures   Person的人脸图片
      *                  urls    array: 指定图片的url数组
      *                  files   array: 指定图片的路径数组
-	 *                  以上两种指定其一即可，如果指定多个，则优先使用urls，其次 files
-	 *
-	 * @return array    http请求响应
-	 */
-	public function pornDetect($picture) {
-	    
-	    if (!$picture || !is_array($picture)) {
-	        return Error::json(Error::$Param, 'param picture must be array');
-	    }
+     *                  以上两种指定其一即可，如果指定多个，则优先使用urls，其次 files
+     *
+     * @return array    http请求响应
+     */
+    public function pornDetect($picture) {
+        
+        if (!$picture || !is_array($picture)) {
+            return Error::json(Error::$Param, 'param picture must be array');
+        }
 
-	    $reqUrl = $this->conf->buildUrl('/detection/pornDetect');
-	    $headers = $this->baseHeaders();
-	    $files = $this->baseParams();
-	    
-	    if (isset($picture['urls'])) {
-	        $headers[] = 'Content-Type:application/json';
-	        $files['url_list'] = $picture['urls'];	   
-	        
-	        $data = json_encode($files);
-	    } else if (isset($picture['files'])){
-	        $index = 0;
-	        
-	        foreach ($picture['files'] as $file) {
-	            if(PATH_SEPARATOR==';'){    // WIN OS
-	                $path = iconv("UTF-8","gb2312//IGNORE",$file);
-	            } else {
-	                $path = $file;
-	            }
-	            
-	            $path = realpath($path);
-	            if (!file_exists($path)) {
-	               return Error::json(Error::$FilePath, 'file '.$file.' not exist');
-	            }
-	            
-	            if (function_exists('curl_file_create')) {
-	                $files["image[$index]"] = curl_file_create($path);
-	            } else {
-	                $files["image[$index]"] = '@'.($path);
-	            }
-	            $index++;	            
-	        }	
-	        
-	        $data = $files;
-	    } else {
-	        return Error::json(Error::$Param, 'param picture is illegal');
-	    }
-	    
-	    return $this->doRequest(array(
-	        'url' => $reqUrl,
-	        'method' => 'POST',
-	        'data' => $data,
-	        'header' => $headers,
-	        'timeout' => $this->conf->timeout()
-	    ));
-	}
-	
-	/**
-	 * 标签识别
-	 * @param  array(associative) $picture   识别的图片
-	 *                 * @param  array(associative) $picture   
-	 *                  url    array: 指定图片的url数组
-	 *                  file   array: 指定图片的路径数组
-	 *                  buffer string: 指定图片的内容
-	 *                  以上三种指定其一即可，如果指定多个，则优先使用url，其次 file，再次 buffer。
-	 *
-	 * @return array    http请求响应
-	 */
-	public function tagDetect($picture) {
-	     
-	    if (!$picture || !is_array($picture)) {
-	        return Error::json(Error::$Param, 'param picture must be array');
-	    }
-	
-	    $reqUrl = $this->conf->buildUrl('/v1/detection/imagetag_detect');
-	    $headers = $this->baseHeaders();
-	    $headers[] = 'Content-Type:application/json';
-	    $files = $this->baseParams();
-	     
-	    if (isset($picture['url'])) {	        
-	        $files['url'] = $picture['url'];	         
-	    } else if (isset($picture['file'])) {
-	        if(PATH_SEPARATOR==';') {    // WIN OS
-	            $path = iconv("UTF-8","gb2312//IGNORE",$picture['file']);
-	        } else {
-	            $path = $picture['file'];
-	        }
-	        	         
-	        $filePath = realpath($path);
+        $reqUrl = $this->conf->buildUrl('/detection/pornDetect');
+        $headers = $this->baseHeaders();
+        $files = $this->baseParams();
+        
+        if (isset($picture['urls'])) {
+            $headers[] = 'Content-Type:application/json';
+            $files['url_list'] = $picture['urls'];     
+            
+            $data = json_encode($files);
+        } else if (isset($picture['files'])){
+            $index = 0;
+            
+            foreach ($picture['files'] as $file) {
+                if(PATH_SEPARATOR==';'){    // WIN OS
+                    $path = iconv("UTF-8","gb2312//IGNORE",$file);
+                } else {
+                    $path = $file;
+                }
+                
+                $path = realpath($path);
+                if (!file_exists($path)) {
+                   return Error::json(Error::$FilePath, 'file '.$file.' not exist');
+                }
+                
+                if (function_exists('curl_file_create')) {
+                    $files["image[$index]"] = curl_file_create($path);
+                } else {
+                    $files["image[$index]"] = '@'.($path);
+                }
+                $index++;               
+            }   
+            
+            $data = $files;
+        } else {
+            return Error::json(Error::$Param, 'param picture is illegal');
+        }
+        
+        return $this->doRequest(array(
+            'url' => $reqUrl,
+            'method' => 'POST',
+            'data' => $data,
+            'header' => $headers,
+            'timeout' => $this->conf->timeout()
+        ));
+    }
+    
+    /**
+     * 标签识别
+     * @param  array(associative) $picture   识别的图片
+     *                 * @param  array(associative) $picture   
+     *                  url    array: 指定图片的url数组
+     *                  file   array: 指定图片的路径数组
+     *                  buffer string: 指定图片的内容
+     *                  以上三种指定其一即可，如果指定多个，则优先使用url，其次 file，再次 buffer。
+     *
+     * @return array    http请求响应
+     */
+    public function tagDetect($picture) {
+         
+        if (!$picture || !is_array($picture)) {
+            return Error::json(Error::$Param, 'param picture must be array');
+        }
+    
+        $reqUrl = $this->conf->buildUrl('/v1/detection/imagetag_detect');
+        $headers = $this->baseHeaders();
+        $headers[] = 'Content-Type:application/json';
+        $files = $this->baseParams();
+         
+        if (isset($picture['url'])) {           
+            $files['url'] = $picture['url'];             
+        } else if (isset($picture['file'])) {
+            if(PATH_SEPARATOR==';') {    // WIN OS
+                $path = iconv("UTF-8","gb2312//IGNORE",$picture['file']);
+            } else {
+                $path = $picture['file'];
+            }
+                         
+            $filePath = realpath($path);
             if (! file_exists($filePath)) {
                 return Error::json(Error::$FilePath, 'file '.$picture['file'].' not exist');
             }
             
             $files['image'] = base64_encode(file_get_contents($filePath));         
-	    } else if (isset($picture['buffer'])) {
-	       $files['image'] = base64_encode($picture['buffer']);                    
-	    } else {
-	        return Error::json(Error::$Param, 'param picture is illegal');
-	    }
-	     
-	    $data = json_encode($files);
-	    return $this->doRequest(array(
-	        'url' => $reqUrl,
-	        'method' => 'POST',
-	        'data' => $data,
-	        'header' => $headers,
-	        'timeout' => $this->conf->timeout()
-	    ));
-	}
-	
-	/**
-	 * 身份证识别
-	 * @param  array(associative) $picture   识别的图片
-	 *                 * @param  array(associative) $pictures   Person的人脸图片
-	 *                  urls    array: 指定图片的url数组
-	 *                  files   array: 指定图片的路径数组
-	 *                  buffers array: 指定图片的内容
-	 *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
-	 * @param $cardType int 0为身份证有照片的一面，1为身份证有国徽的一面                
-	 * @return array    http请求响应
-	 */
-	public function idcardDetect($picture, $cardType=0) {
-	     
-	    if (!$picture || !is_array($picture)) {
-	        return Error::json(Error::$Param, 'param picture must be array');
-	    }
-	   
-	    if ($cardType !== 0 && $cardType !== 1) {
+        } else if (isset($picture['buffer'])) {
+           $files['image'] = base64_encode($picture['buffer']);                    
+        } else {
+            return Error::json(Error::$Param, 'param picture is illegal');
+        }
+         
+        $data = json_encode($files);
+        return $this->doRequest(array(
+            'url' => $reqUrl,
+            'method' => 'POST',
+            'data' => $data,
+            'header' => $headers,
+            'timeout' => $this->conf->timeout()
+        ));
+    }
+    
+    /**
+     * 身份证识别
+     * @param  array(associative) $picture   识别的图片
+     *                 * @param  array(associative) $pictures   Person的人脸图片
+     *                  urls    array: 指定图片的url数组
+     *                  files   array: 指定图片的路径数组
+     *                  buffers array: 指定图片的内容
+     *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
+     * @param $cardType int 0为身份证有照片的一面，1为身份证有国徽的一面                
+     * @return array    http请求响应
+     */
+    public function idcardDetect($picture, $cardType=0) {
+         
+        if (!$picture || !is_array($picture)) {
+            return Error::json(Error::$Param, 'param picture must be array');
+        }
+       
+        if ($cardType !== 0 && $cardType !== 1) {
             return Error::json(Error::$Param, 'param cardType error');
         }
         
-	    $reqUrl = $this->conf->buildUrl('/ocr/idcard');
-	    $headers = $this->baseHeaders();
-	    $files = $this->baseParams();
-	    $files['card_type'] = $cardType;
-	    if (isset($picture['urls'])) {
-	        $headers[] = 'Content-Type:application/json';
-	        $files['url_list'] = $picture['urls'];
-	         
-	        $data = json_encode($files);
-	    } else if (isset($picture['files'])){
-	        $index = 0;
-	         
-	        foreach ($picture['files'] as $file) {
-	            if(PATH_SEPARATOR==';'){    // WIN OS
-	                $path = iconv("UTF-8","gb2312//IGNORE",$file);
-	            } else {
-	                $path = $file;
-	            }
-	             
-	            $path = realpath($path);
-	            if (!file_exists($path)) {
-	                return Error::json(Error::$FilePath, 'file '.$file.' not exist');
-	            }
-	             
-	            if (function_exists('curl_file_create')) {
-	                $files["image[$index]"] = curl_file_create($path);
-	            } else {
-	                $files["image[$index]"] = '@'.($path);
-	            }
-	            $index++;
-	        }
-	         
-	        $data = $files;
-	    } else if (isset($picture['buffers'])){
-	        $index = 0;
-	         
-	        foreach ($picture['buffers'] as $buffer) { 
-	            $files["image[$index]"] = $buffer;
-	            
-	            $index++;
-	        }
-	         
-	        $data = $files;
-	    } else {
-	        return Error::json(Error::$Param, 'param picture is illegal');
-	    }
-	     
-	    return $this->doRequest(array(
-	        'url' => $reqUrl,
-	        'method' => 'POST',
-	        'data' => $data,
-	        'header' => $headers,
-	        'timeout' => $this->conf->timeout()
-	    ));
-	}
-	
-	/**
-	 * 名片识别
-	 * @param  array(associative) $picture   识别的图片
-	 *                 * @param  array(associative) $pictures   Person的人脸图片
-	 *                  urls    array: 指定图片的url数组
-	 *                  files   array: 指定图片的路径数组
-	 *                  buffers array: 指定图片的内容
-	 *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
-	 * @param retImage int 0不返回图片，1返回图片
-	 * @return array    http请求响应
-	 */
-	public function namecardDetect($picture, $retImage=0) {
-	
-	    if (!$picture || !is_array($picture)) {
-	        return Error::json(Error::$Param, 'param picture must be array');
-	    }
-	
-	    if ($retImage !== 0 && $retImage !== 1) {
-	        return Error::json(Error::$Param, 'param retImage error');
-	    }
-	
-	    $reqUrl = $this->conf->buildUrl('/ocr/namecard');
-	    $headers = $this->baseHeaders();
-	    $files = $this->baseParams();
-	    $files['ret_image'] = $retImage;
-	    if (isset($picture['urls'])) {
-	        $headers[] = 'Content-Type:application/json';
-	        $files['url_list'] = $picture['urls'];
-	
-	        $data = json_encode($files);
-	    } else if (isset($picture['files'])){
-	        $index = 0;
-	
-	        foreach ($picture['files'] as $file) {
-	            if(PATH_SEPARATOR==';'){    // WIN OS
-	                $path = iconv("UTF-8","gb2312//IGNORE",$file);
-	            } else {
-	                $path = $file;
-	            }
-	            
-	            $path = realpath($path);
-	            if (!file_exists($path)) {
-	                return Error::json(Error::$FilePath, 'file '.$file.' not exist');
-	            }
-	
-	            if (function_exists('curl_file_create')) {
-	                $files["image[$index]"] = curl_file_create($path);
-	            } else {
-	                $files["image[$index]"] = '@'.($path);
-	            }
-	            $index++;
-	        }
-	
-	        $data = $files;
-	    } else if (isset($picture['buffers'])){
-	        $index = 0;
-	
-	        foreach ($picture['buffers'] as $buffer) {
-	            $files["image[$index]"] = $buffer;
-	             
-	            $index++;
-	        }
-	
-	        $data = $files;
-	    } else {
-	        return Error::json(Error::$Param, 'param picture is illegal');
-	    }
-	
-	    return $this->doRequest(array(
-	        'url' => $reqUrl,
-	        'method' => 'POST',
-	        'data' => $data,
-	        'header' => $headers,
-	        'timeout' => $this->conf->timeout()
-	    ));
-	}
+        $reqUrl = $this->conf->buildUrl('/ocr/idcard');
+        $headers = $this->baseHeaders();
+        $files = $this->baseParams();
+        $files['card_type'] = $cardType;
+        if (isset($picture['urls'])) {
+            $headers[] = 'Content-Type:application/json';
+            $files['url_list'] = $picture['urls'];
+             
+            $data = json_encode($files);
+        } else if (isset($picture['files'])){
+            $index = 0;
+             
+            foreach ($picture['files'] as $file) {
+                if(PATH_SEPARATOR==';'){    // WIN OS
+                    $path = iconv("UTF-8","gb2312//IGNORE",$file);
+                } else {
+                    $path = $file;
+                }
+                 
+                $path = realpath($path);
+                if (!file_exists($path)) {
+                    return Error::json(Error::$FilePath, 'file '.$file.' not exist');
+                }
+                 
+                if (function_exists('curl_file_create')) {
+                    $files["image[$index]"] = curl_file_create($path);
+                } else {
+                    $files["image[$index]"] = '@'.($path);
+                }
+                $index++;
+            }
+             
+            $data = $files;
+        } else if (isset($picture['buffers'])){
+            $index = 0;
+             
+            foreach ($picture['buffers'] as $buffer) { 
+                $files["image[$index]"] = $buffer;
+                
+                $index++;
+            }
+             
+            $data = $files;
+        } else {
+            return Error::json(Error::$Param, 'param picture is illegal');
+        }
+         
+        return $this->doRequest(array(
+            'url' => $reqUrl,
+            'method' => 'POST',
+            'data' => $data,
+            'header' => $headers,
+            'timeout' => $this->conf->timeout()
+        ));
+    }
+    
+    /**
+     * 行驶证识别
+     * @param  array(associative) $picture   识别的图片
+     *                 * @param  array(associative) $pictures   Person的人脸图片
+     *                  urls    array: 指定图片的url数组
+     *                  files   array: 指定图片的路径数组
+     *                  buffers array: 指定图片的内容
+     *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
+     * @param $cardType int 0为身份证有照片的一面，1为身份证有国徽的一面                
+     * @return array    http请求响应
+     */
+    public function drivinglicenceDetect($picture, $type=0) {
+         
+        if (!$picture || !is_array($picture)) {
+            return Error::json(Error::$Param, 'param picture must be array');
+        }
+       
+        if (!in_array($type, [0, 1, 2])) {
+            return Error::json(Error::$Param, 'param cardType error');
+        }
+        
+        $reqUrl = $this->conf->buildUrl('/ocr/drivinglicence');
+        $headers = $this->baseHeaders();
+        $files = $this->baseParams();
+        $files['type'] = $type;
+        if (isset($picture['url'])) {
+            $headers[] = 'Content-Type:application/json';
+            $files['url'] = $picture['url'];
+             
+            $data = json_encode($files);
+        } else if (isset($picture['files'])){
+            $index = 0;
+             
+            foreach ($picture['files'] as $file) {
+                if(PATH_SEPARATOR==';'){    // WIN OS
+                    $path = iconv("UTF-8","gb2312//IGNORE",$file);
+                } else {
+                    $path = $file;
+                }
+                 
+                $path = realpath($path);
+                if (!file_exists($path)) {
+                    return Error::json(Error::$FilePath, 'file '.$file.' not exist');
+                }
+                 
+                if (function_exists('curl_file_create')) {
+                    $files["image[$index]"] = curl_file_create($path);
+                } else {
+                    $files["image[$index]"] = '@'.($path);
+                }
+                $index++;
+            }
+             
+            $data = $files;
+        } else if (isset($picture['buffers'])){
+            $index = 0;
+             
+            foreach ($picture['buffers'] as $buffer) { 
+                $files["image[$index]"] = $buffer;
+                
+                $index++;
+            }
+             
+            $data = $files;
+        } else {
+            return Error::json(Error::$Param, 'param picture is illegal');
+        }
+         
+        return $this->doRequest(array(
+            'url' => $reqUrl,
+            'method' => 'POST',
+            'data' => $data,
+            'header' => $headers,
+            'timeout' => $this->conf->timeout()
+        ));
+    }
+    
+    /**
+     * 名片识别
+     * @param  array(associative) $picture   识别的图片
+     *                 * @param  array(associative) $pictures   Person的人脸图片
+     *                  urls    array: 指定图片的url数组
+     *                  files   array: 指定图片的路径数组
+     *                  buffers array: 指定图片的内容
+     *                  以上三种指定其一即可，如果指定多个，则优先使用urls，其次 files，最后buffers
+     * @param retImage int 0不返回图片，1返回图片
+     * @return array    http请求响应
+     */
+    public function namecardDetect($picture, $retImage=0) {
+    
+        if (!$picture || !is_array($picture)) {
+            return Error::json(Error::$Param, 'param picture must be array');
+        }
+    
+        if ($retImage !== 0 && $retImage !== 1) {
+            return Error::json(Error::$Param, 'param retImage error');
+        }
+    
+        $reqUrl = $this->conf->buildUrl('/ocr/namecard');
+        $headers = $this->baseHeaders();
+        $files = $this->baseParams();
+        $files['ret_image'] = $retImage;
+        if (isset($picture['urls'])) {
+            $headers[] = 'Content-Type:application/json';
+            $files['url_list'] = $picture['urls'];
+    
+            $data = json_encode($files);
+        } else if (isset($picture['files'])){
+            $index = 0;
+    
+            foreach ($picture['files'] as $file) {
+                if(PATH_SEPARATOR==';'){    // WIN OS
+                    $path = iconv("UTF-8","gb2312//IGNORE",$file);
+                } else {
+                    $path = $file;
+                }
+                
+                $path = realpath($path);
+                if (!file_exists($path)) {
+                    return Error::json(Error::$FilePath, 'file '.$file.' not exist');
+                }
+    
+                if (function_exists('curl_file_create')) {
+                    $files["image[$index]"] = curl_file_create($path);
+                } else {
+                    $files["image[$index]"] = '@'.($path);
+                }
+                $index++;
+            }
+    
+            $data = $files;
+        } else if (isset($picture['buffers'])){
+            $index = 0;
+    
+            foreach ($picture['buffers'] as $buffer) {
+                $files["image[$index]"] = $buffer;
+                 
+                $index++;
+            }
+    
+            $data = $files;
+        } else {
+            return Error::json(Error::$Param, 'param picture is illegal');
+        }
+    
+        return $this->doRequest(array(
+            'url' => $reqUrl,
+            'method' => 'POST',
+            'data' => $data,
+            'header' => $headers,
+            'timeout' => $this->conf->timeout()
+        ));
+    }
 
     /**
      * 创建Person
@@ -310,8 +387,8 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceNewPerson($personId, $groupIds, $picture, $personName=NULL, $tag=NULL) {
-	    
+    public function faceNewPerson($personId, $groupIds, $picture, $personName=NULL, $tag=NULL) {
+        
         if (! is_array($groupIds)) {
             return Error::json(Error::$Param, 'param groupIds must be array');
         }
@@ -372,7 +449,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 删除Person
@@ -380,7 +457,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceDelPerson($personId) {
+    public function faceDelPerson($personId) {
         $reqUrl = $this->conf->buildUrl('/face/delperson');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -394,8 +471,8 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
-	
+    }
+    
     /**
      * 为Person 添加人脸
      * @param  string $personId  创建的Person的ID
@@ -408,7 +485,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceAddFace($personId, $pictures, $tag=NULL) {
+    public function faceAddFace($personId, $pictures, $tag=NULL) {
         if (! is_array($pictures)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -464,7 +541,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 删除face
@@ -473,8 +550,8 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceDelFace($personId, $faceIds) {
-	    
+    public function faceDelFace($personId, $faceIds) {
+        
         if (! is_array($faceIds)) {
             return Error::json(Error::$Param, 'param faceIds must be array');
         }
@@ -492,7 +569,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 设置信息
@@ -502,7 +579,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceSetInfo($personId, $personName=NULL, $tag=NULL) {
+    public function faceSetInfo($personId, $personName=NULL, $tag=NULL) {
         $reqUrl = $this->conf->buildUrl('/face/setinfo');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -522,7 +599,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 获取信息
@@ -530,7 +607,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceGetInfo($personId) {
+    public function faceGetInfo($personId) {
         $reqUrl = $this->conf->buildUrl('/face/getinfo');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -544,14 +621,14 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
-	
+    }
+    
     /**
      * 获取app下的组列表
      *
      * @return array    http请求响应
      */
-	public function faceGetGroupIds() {
+    public function faceGetGroupIds() {
         $reqUrl = $this->conf->buildUrl('/face/getgroupids');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -564,7 +641,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 获取group下的person列表
@@ -572,7 +649,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceGetPersonIds($groupId) {
+    public function faceGetPersonIds($groupId) {
         $reqUrl = $this->conf->buildUrl('/face/getpersonids');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -586,7 +663,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 获取person的face列表
@@ -594,7 +671,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceGetFaceIds($personId) {
+    public function faceGetFaceIds($personId) {
         $reqUrl = $this->conf->buildUrl('/face/getfaceids');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -608,7 +685,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 获取face的信息
@@ -616,7 +693,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceGetFaceInfo($faceId) {
+    public function faceGetFaceInfo($faceId) {
         $reqUrl = $this->conf->buildUrl('/face/getfaceinfo');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -630,7 +707,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 识别指定的图片属于哪个人
@@ -643,7 +720,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceIdentify($groupId, $picture) {
+    public function faceIdentify($groupId, $picture) {
         if (! is_array($picture)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -689,7 +766,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 识别指定的图片是不是指定的person
@@ -702,7 +779,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceVerify($personId, $picture) {
+    public function faceVerify($personId, $picture) {
         if (! is_array($picture)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -748,7 +825,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 对比两张图片是否是同一个人
@@ -765,7 +842,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceCompare($pictureA, $pictureB) {
+    public function faceCompare($pictureA, $pictureB) {
         if (! is_array($pictureA)) {
             return Error::json(Error::$Param, 'param pictureA must be array');
         }
@@ -842,7 +919,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 检测图中的人脸
@@ -855,7 +932,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceDetect($picture, $mode=0) {
+    public function faceDetect($picture, $mode=0) {
         if (! is_array($picture)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -906,7 +983,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 定位图中人脸的五官信息
@@ -919,8 +996,8 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceShape($picture, $mode=0) {
-	    
+    public function faceShape($picture, $mode=0) {
+        
         if (! is_array($picture)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -970,7 +1047,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 检测图片中的人和给定的信息是否匹配
@@ -984,8 +1061,8 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceIdCardCompare($idcardNumber, $idcardName, $picture) {
-	    
+    public function faceIdCardCompare($idcardNumber, $idcardName, $picture) {
+        
         if (! is_array($picture)) {
             return Error::json(Error::$Param, 'param picture must be array');
         }
@@ -1033,7 +1110,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 活体检测第一步：获取唇语（验证码）
@@ -1041,7 +1118,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceLiveGetFour($seq=NULL) {
+    public function faceLiveGetFour($seq=NULL) {
         $reqUrl = $this->conf->buildUrl('/face/livegetfour');
         $headers = $this->baseHeaders();
         $headers[] = 'Content-Type:application/json';
@@ -1057,7 +1134,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 活体检测第二步：检测
@@ -1075,7 +1152,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceLiveDetectFour($validate, $video, $compareFlag, $card=NULL, $seq=NULL) {
+    public function faceLiveDetectFour($validate, $video, $compareFlag, $card=NULL, $seq=NULL) {
         if (! is_array($video)) {
             return Error::json(Error::$Param, 'param video must be array');
         }
@@ -1149,7 +1226,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
     /**
      * 活体检测第二步：检测--对比指定身份信息
@@ -1164,7 +1241,7 @@ class CIClient {
      *
      * @return array    http请求响应
      */
-	public function faceIdCardLiveDetectFour($validate, $video, $idcardNumber, $idcardName, $seq=NULL) {
+    public function faceIdCardLiveDetectFour($validate, $video, $idcardNumber, $idcardName, $seq=NULL) {
         if (! is_array($video)) {
             return Error::json(Error::$Param, 'param video must be array');
         }
@@ -1210,7 +1287,7 @@ class CIClient {
             'header' => $headers,
             'timeout' => $this->conf->timeout()
         ));
-	}
+    }
 
 
     /**
@@ -1228,13 +1305,13 @@ class CIClient {
      */
     private function doRequest($request) {
         $result = $this->http->sendRequest($request);
-		$json = json_decode($result, true);
-		if ($json) {
-			$json['http_code'] = $this->http->statusCode();
-			return json_encode($json);
-		} 
+        $json = json_decode($result, true);
+        if ($json) {
+            $json['http_code'] = $this->http->statusCode();
+            return json_encode($json);
+        } 
 
-		return Error::json(Error::$Network, "response is not json.", $this->http->statusCode());
+        return Error::json(Error::$Network, "response is not json.", $this->http->statusCode());
     }
 
     private function baseHeaders() {
@@ -1251,8 +1328,8 @@ class CIClient {
         );
     }
 
-	private $bucket;
-	private $auth;
-	private $http;
-	private $conf;
+    private $bucket;
+    private $auth;
+    private $http;
+    private $conf;
 }
